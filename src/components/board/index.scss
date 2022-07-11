@@ -1,0 +1,32 @@
+$unknown-color-light: #9bf2c4;
+$unknown-color-dark: #45d994;
+$known-color-light: #ffe27a;
+$known-color-dark: #ffc229;
+
+.known-light {
+  background-color: $known-color-light;
+}
+
+.known-dark {
+  background-color: $known-color-dark;
+}
+
+.unknown-light {
+  background-color: $unknown-color-light;
+}
+
+.unknown-dark {
+  background-color: $unknown-color-dark;
+}
+
+.row {
+  display: flex;
+}
+
+.block {
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
