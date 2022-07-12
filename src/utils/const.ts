@@ -1,17 +1,23 @@
 export enum BlockType {
   Normal,
-  Mine
+  Mine,
 }
 
 export enum BlockStatus {
   Unknown,
   Marked,
   Questionmarked,
-  Known
+  Known,
 }
 
 export enum GameStatus {
   Start,
   Win,
-  Lose
+  Lose,
 }
+
+export const MouseButton = {
+  Left: 1,
+  Right: 2,
+  Both: 3,
+};

@@ -1,14 +1,21 @@
-import { useEffect } from "react";
-import { useRecoilState, useSetRecoilState, useRecoilValue } from "recoil";
+import { useEffect, useState } from "react";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import cx from "classnames";
 import debounce from "lodash.debounce";
-import { boardState, gameStatus } from "@/store";
+import {
+  boardState,
+  gameStatus,
+  mineCountState,
+  mouseDownState,
+  mouseButtonState,
+  gameStatusState,
+} from "@/store";
 import {
   deepCopyBoard,
   generateGameBoard,
   getBlocksAround,
 } from "@/utils/common";
-import { BlockStatus, BlockType } from "@/utils/const";
+import { BlockStatus, BlockType, GameStatus, MouseButton } from "@/utils/const";
 import { IBoard, IBlock } from "@/utils/types";
 import "./index.scss";
 
@@ -18,6 +25,10 @@ const unknownClassNames = ["unknown-light", "unknown-dark"];
 const Board = () => {
   const [board, setGameBoard] = useRecoilState(boardState);
   const game = useRecoilValue(gameStatus);
+  const setMineCount = useSetRecoilState(mineCountState);
+  const setGameStatus = useSetRecoilState(gameStatusState);
+  const [onMounsDown, setOnMouseDown] = useRecoilState(mouseDownState);
+  const [mouseButton, setMouseButton] = useRecoilState(mouseButtonState);
 
   const generateGame = () => {
     setGameBoard(generateGameBoard(game.row, game.col, game.mine));
@@ -43,7 +54,7 @@ const Board = () => {
     });
   };
 
-  const handleLeftMounseDown = (block: IBlock, row: number, col: number) => {
+  const handleLeftMounseUp = (block: IBlock, row: number, col: number) => {
     setGameBoard((board) => {
       const newBoard = deepCopyBoard(board);
       if (block.type === BlockType.Normal) {
@@ -55,12 +66,24 @@ const Board = () => {
         } else {
           handleClickZeroBlock(newBoard, block, row, col);
         }
+      } else {
+        setGameStatus(GameStatus.Lose);
       }
       return newBoard;
     });
   };
 
-  const handleRightMouseDown = (block: IBlock, row: number, col: number) => {
+  const handleRightMouseUp = (block: IBlock, row: number, col: number) => {
+    switch (block.status) {
+      case BlockStatus.Marked:
+        setMineCount((count) => count + 1);
+        break;
+      case BlockStatus.Unknown:
+        setMineCount((count) => count - 1);
+        break;
+      default:
+        break;
+    }
     setGameBoard((board) => {
       const newBoard = deepCopyBoard(board);
       switch (block.status) {
@@ -80,28 +103,60 @@ const Board = () => {
     });
   };
 
-  const handleBothMouseDown = (block: IBlock, row: number, col: number) => {
-    if (block.status !== BlockStatus.Known) return;
+  const handleBothMouseUp = (block: IBlock, row: number, col: number) => {
+    setGameBoard((board) => {
+      const newBoard = deepCopyBoard(board);
+      const blocksAround = getBlocksAround(newBoard, row, col);
+      let count = 0;
+      for (const b of blocksAround) {
+        if (
+          b.block.type === BlockType.Mine &&
+          b.block.status === BlockStatus.Marked
+        ) {
+          count++;
+        }
+      }
+      if (count === block.count) {
+        blocksAround.forEach((b) => {
+          if (
+            b.block.type !== BlockType.Mine &&
+            b.block.status === BlockStatus.Unknown
+          ) {
+            if (b.block.count === 0) {
+              handleClickZeroBlock(newBoard, b.block, b.row, b.col);
+            }
+            newBoard[b.row][b.col] = {
+              ...b.block,
+              status: BlockStatus.Known,
+            };
+          }
+        });
+      }
+      return newBoard;
+    });
+  };
+
+  const handleMouseUp = (block: IBlock, row: number, col: number) => {
+    setMouseButton(0);
+    setOnMouseDown(false);
+    switch (mouseButton) {
+      case MouseButton.Left:
+        handleLeftMounseUp(block, row, col);
+        break;
+      case MouseButton.Right:
+        handleRightMouseUp(block, row, col);
+        break;
+      case MouseButton.Both:
+        handleBothMouseUp(block, row, col);
+        break;
+    }
   };
 
   const handleMouseDown = debounce(
-    (
-      e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-      block: IBlock,
-      row: number,
-      col: number
-    ) => {
-      switch (e.buttons) {
-        case 1:
-          handleLeftMounseDown(block, row, col);
-          break;
-        case 2:
-          handleRightMouseDown(block, row, col);
-          break;
-        case 3:
-          handleBothMouseDown(block, row, col);
-          break;
-      }
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      if (game.gameStatus !== GameStatus.Start) return;
+      setOnMouseDown(true);
+      setMouseButton(e.buttons);
     },
     75,
     { trailing: true }
@@ -109,9 +164,9 @@ const Board = () => {
 
   return (
     <div>
-      {board.map((r, i) => (
+      {board.map((row, i) => (
         <div key={i} className="row">
-          {r.map((block, j) => (
+          {row.map((block, j) => (
             <div
               key={j}
               className={cx(
@@ -120,7 +175,8 @@ const Board = () => {
                   ? knownClassNames
                   : unknownClassNames)[(i + j) % 2]
               )}
-              onMouseDown={(e) => handleMouseDown(e, block, i, j)}
+              onMouseDown={handleMouseDown}
+              onMouseUp={() => handleMouseUp(block, i, j)}
               onContextMenu={(e) => e.preventDefault()}
             >
               {block.status === BlockStatus.Unknown && null}
@@ -136,6 +192,7 @@ const Board = () => {
           ))}
         </div>
       ))}
+      <div>{game.mine}</div>
     </div>
   );
 };
