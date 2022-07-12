@@ -1,23 +1,27 @@
 export enum BlockType {
   Normal,
-  Mine,
+  Mine
 }
 
 export enum BlockStatus {
   Unknown,
   Marked,
   Questionmarked,
-  Known,
+  Known
 }
 
 export enum GameStatus {
   Start,
   Win,
-  Lose,
+  Lose
 }
 
 export const MouseButton = {
+  None: 0,
   Left: 1,
   Right: 2,
-  Both: 3,
-};
+  Both: 3
+}
+
+export const knownClassNames = ['known-light', 'known-dark']
+export const unknownClassNames = ['unknown-light', 'unknown-dark']

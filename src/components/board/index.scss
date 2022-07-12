@@ -3,6 +3,10 @@ $unknown-color-dark: #45d994;
 $known-color-light: #ffe27a;
 $known-color-dark: #ffc229;
 
+.board {
+  user-select: none;
+}
+
 .known-light {
   background-color: $known-color-light;
 }
@@ -13,10 +17,18 @@ $known-color-dark: #ffc229;
 
 .unknown-light {
   background-color: $unknown-color-light;
+
+  &-highlighted {
+    background-color: darken($color: $unknown-color-light, $amount: 20);
+  }
 }
 
 .unknown-dark {
   background-color: $unknown-color-dark;
+
+  &-highlighted {
+    background-color: darken($color: $unknown-color-dark, $amount: 20);
+  }
 }
 
 .row {
